@@ -1,16 +1,16 @@
 <resources>
     <string name="app_name">Weather Application</string>
     <string name="location">St. Paul, MN</string>
-    <string name="currTemp">%d˚</string>
-    <string name="feel">Feels like 78˚</string>
-    <string name="low">Low: %d˚</string>
-    <string name="high">High: %d˚</string>
-    <string name="humidity">Humidity %d%%</string>
-    <string name="pressure">Pressure %d hPa</string>
-    <string name="image_description">Sunny</string>
+    <string name="currTemp">%s˚</string>
+    <string name="feel">Feels like %s˚</string>
+    <string name="low">Low: %s˚</string>
+    <string name="high">High: %s˚</string>
+    <string name="humidity">Humidity %s%%</string>
+    <string name="pressure">Pressure %s hPa</string>
+    <string name="image_description">%s</string>
     <string name="second_screen">Forecast</string>
-    <string name="date">%s %d</string>
-    <string name="temp">Temp: %d˚</string>
+    <string name="date">%s %s</string>
+    <string name="temp">Temp: %s˚</string>
     <string name="sunrise">Sunrise: %sam</string>
     <string name="sunset">Sunset: %spm</string>
 </resources>

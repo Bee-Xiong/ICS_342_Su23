@@ -1,8 +1,10 @@
 package com.example.weatherapplication
 
+import com.squareup.moshi.Json
+
 data class ForecastTemp(
-    val day: Float,
-    val min: Float,
-    val max: Float,
+    @Json(name = "day") val day: Float,
+    @Json(name = "min") val min: Float,
+    @Json(name = "max") val max: Float,
 )
 
