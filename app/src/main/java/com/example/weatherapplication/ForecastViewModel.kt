@@ -10,13 +10,18 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ForecastViewModel @Inject constructor(private val apiService: Api) : ViewModel() {
+    private val _forecastData: MutableLiveData<ForecastData> = MutableLiveData()
+    val forecastData: LiveData<ForecastData>
+        get() = _forecastData
 
-    private val _weatherData: MutableLiveData<ForecastData> = MutableLiveData()
-    val weatherData: LiveData<ForecastData>
-        get() = _weatherData
+    private var zipCodeNumber = 55119
+    fun setZipCode(zipCode: String) {
+        zipCodeNumber = zipCode.toInt()
+        viewAppeared()
+    }
 
-    fun viewAppeared() = viewModelScope.launch {
-        _weatherData.value = apiService.getForecastData()
+    private fun viewAppeared() = viewModelScope.launch {
+        _forecastData.value = apiService.getForecastData(zip = zipCodeNumber)
     }
 
 }
