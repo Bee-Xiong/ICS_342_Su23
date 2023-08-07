@@ -1,58 +1,77 @@
 package com.example.weatherapplication
 
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.text.isDigitsOnly
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import coil.compose.AsyncImage
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             val navController = rememberNavController()
-            NavHost(navController = navController, startDestination = "Start") {
+            NavHost(
+                navController = navController,
+                startDestination = stringResource(R.string.start)
+            ) {
                 this.composable("Start") {
                     MyApp(navController)
                 }
-                composable(
-                    "ForecastScreen",
+                composable("ForecastScreen/{zipCodeNum}",
+                    arguments = listOf(
+                        navArgument("zipCodeNum") {
+                            type = NavType.StringType
+                        }
+                    )
                 ) {
-                    ForecastScreen()
+                    val item = it.arguments?.getString(stringResource(R.string.zipcode_pass_value))
+                    if (item != null) {
+                        ForecastScreen(zipCode = item)
+                    }
                 }
             }
         }
@@ -60,11 +79,11 @@ class MainActivity : ComponentActivity() {
 }
 
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MyApp(navController: NavController, viewModel: CurrentConditionsViewModel = hiltViewModel()) {
     val weatherData = viewModel.weatherData.observeAsState()
-
+    val zipCodeNumber = viewModel.zipCode
+    viewModel.setCurrentZipCode(zipCodeNumber)
     LaunchedEffect(Unit) {
         viewModel.viewAppeared()
     }
@@ -77,16 +96,20 @@ fun MyApp(navController: NavController, viewModel: CurrentConditionsViewModel = 
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             TitleBar(stringResource(R.string.app_name))
-            Location()
+            Location(weatherData)
             Row(
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(color = Color(137, 207, 240))
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     CurrentTemp(weatherData)
                 }
-                Spacer(modifier = Modifier.width(width = 75.dp))
+                Spacer(modifier = Modifier.width(width = 65.dp))
                 MainImage(weatherData)
             }
             Column(
@@ -97,7 +120,15 @@ fun MyApp(navController: NavController, viewModel: CurrentConditionsViewModel = 
                 MoreInfo(weatherData)
             }
             Column {
-                ForecastButton(navController)
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    ForecastButton(viewModel, navController)
+                }
+                Spacer(modifier = Modifier.height(height = 50.dp))
+                ZipCodeSearch(viewModel)
             }
         }
     }
@@ -105,7 +136,7 @@ fun MyApp(navController: NavController, viewModel: CurrentConditionsViewModel = 
 
 @Composable
 fun EmptyView() {
-    Text(text = "No Data")
+    Text(stringResource(R.string.no_data))
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -120,8 +151,10 @@ fun TitleBar(text: String) {
 }
 
 @Composable
-fun Location() {
-    Texts(stringResource(R.string.location), 20.sp)
+fun Location(weatherData: State<WeatherData?>) {
+    val city: String = weatherData.value?.name.toString()
+    val country: String = weatherData.value?.country?.country.toString()
+    Texts("$city, $country", 20.sp)
 }
 
 @Composable
@@ -142,7 +175,7 @@ fun MainImage(weatherData: State<WeatherData?>) {
     )
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
+
 @Composable
 fun MoreInfo(weatherData: State<WeatherData?>) {
     val low = weatherData.value?.main?.tempMin?.toInt().toString()
@@ -163,14 +196,83 @@ fun Texts(text: String, size: TextUnit) {
     )
 }
 
+
 @Composable
-fun ForecastButton(navController: NavController) {
+fun ForecastButton(viewModel: CurrentConditionsViewModel, navController: NavController) {
     Button(
-        onClick = { navController.navigate("ForecastScreen") },
+        onClick = {
+            val zipCodeNum: String = viewModel.zipCode
+            navController.navigate("ForecastScreen/$zipCodeNum")
+        },
         modifier = Modifier.width(150.dp),
         colors = ButtonDefaults.buttonColors(Color.Gray),
         shape = RectangleShape,
     ) {
-        Text(text = "Forecast", color = Color.Black)
+        Text(stringResource(R.string.button_forecast), color = Color.Black)
+    }
+}
+
+@Composable
+fun Alert(name: String, showDialog: Boolean, onDismiss: () -> Unit) {
+    AlertDialog(
+        title = { Text(text = stringResource(R.string.alert_title)) },
+        text = { Text(stringResource(R.string.alert_text)) },
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                Text(stringResource(R.string.button_confirm))
+            }
+        },
+        dismissButton = {}
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ZipCodeSearch(viewModel: CurrentConditionsViewModel) {
+    val showDialog = remember { mutableStateOf(false) }
+    val zipCode = viewModel.zipCodeLiveData.observeAsState()
+
+
+    Row(
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.Bottom,
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
+        TextField(
+            value = zipCode.value.toString(),
+            onValueChange = { newText ->
+                val regex = Regex("\n")
+                val newTextNoNewSpace = newText.replace(regex, "")
+                viewModel.setCurrentZipCode(newTextNoNewSpace)
+            },
+            colors = TextFieldDefaults.textFieldColors(containerColor = Color(250, 250, 250)),
+            modifier = Modifier.width(150.dp),
+            textStyle = TextStyle.Default.copy(fontSize = 20.sp),
+            singleLine = true,
+            label = { Text(stringResource(R.string.textField_label)) },
+        )
+        Button(
+            onClick = {
+                if (zipCode.value?.length != 5 || !(zipCode.value?.isDigitsOnly())!!) {
+                    showDialog.value = true
+                } else {
+                    viewModel.setZipCode(zipCode.value.toString())
+                    viewModel.viewAppeared()
+                }
+            },
+            modifier = Modifier.width(150.dp),
+            colors = ButtonDefaults.buttonColors(Color.Gray),
+            shape = RectangleShape,
+        ) {
+            Text(stringResource(R.string.button_search), color = Color.Black)
+        }
+        if (showDialog.value) {
+            Alert(
+                stringResource(R.string.alert_name),
+                showDialog = showDialog.value,
+                onDismiss = { showDialog.value = false })
+        }
     }
 }

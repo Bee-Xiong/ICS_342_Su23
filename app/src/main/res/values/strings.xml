@@ -9,8 +9,22 @@
     <string name="pressure">Pressure %s hPa</string>
     <string name="image_description">%s</string>
     <string name="second_screen">Forecast</string>
+    <string name="time_format">h:mm</string>
+    <string name="month_format">MMM</string>
     <string name="date">%s %s</string>
     <string name="temp">Temp: %s˚</string>
     <string name="sunrise">Sunrise: %sam</string>
     <string name="sunset">Sunset: %spm</string>
+    <string name="button_confirm">Ok</string>
+    <string name="button_forecast">Forecast</string>
+    <string name="button_search">search</string>
+    <string name="alert_name">alert</string>
+    <string name="alert_title">Invalid Input</string>
+    <string name="alert_text">- Only Numbers\n- Exactly 5 characters</string>
+    <string name="textField_label">zip code</string>
+    <string name="no_data">No Data</string>
+    <string name="zipcode_pass_value">zipCodeNum</string>
+    <string name="start">Start</string>
+    <string name="ForecastScreen">ForecastScreen/{zipCodeNum}</string>
+
 </resources>

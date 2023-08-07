@@ -1,7 +1,5 @@
 package com.example.weatherapplication
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,16 +21,16 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import java.time.Instant
 import java.time.LocalDateTime
-import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ForecastScreen(viewModel: ForecastViewModel = hiltViewModel()) {
-    val forecastData = viewModel.weatherData.observeAsState()
+fun ForecastScreen(zipCode: String, viewModel: ForecastViewModel = hiltViewModel()) {
+    val forecastData = viewModel.forecastData.observeAsState()
     val forecastList = forecastData.value?.ForecastList
+    val timezone = forecastData.value?.city?.timezone
     LaunchedEffect(Unit) {
-        viewModel.viewAppeared()
+        viewModel.setZipCode(zipCode)
     }
 
     if (forecastData == null) {
@@ -46,7 +44,9 @@ fun ForecastScreen(viewModel: ForecastViewModel = hiltViewModel()) {
             LazyColumn {
                 if (forecastList != null) {
                     items(forecastList.size) { item ->
-                        ForecastInfo(forecastList[item])
+                        if (timezone != null) {
+                            ForecastInfo(forecastList[item], timezone)
+                        }
                     }
                 }
             }
@@ -54,20 +54,24 @@ fun ForecastScreen(viewModel: ForecastViewModel = hiltViewModel()) {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ForecastInfo(forecastItem: DayForecast) {
-    val formatTime: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm")
-    val formatMonth: DateTimeFormatter = DateTimeFormatter.ofPattern("MMM")
+fun ForecastInfo(forecastItem: DayForecast, timezone: Long) {
+    val formatTime: DateTimeFormatter =
+        DateTimeFormatter.ofPattern(stringResource(R.string.time_format))
+    val formatMonth: DateTimeFormatter =
+        DateTimeFormatter.ofPattern(stringResource(R.string.month_format))
     val sunriseTime =
         LocalDateTime.ofInstant(
-            forecastItem.sunrise?.let { Instant.ofEpochSecond(it) },
-            ZoneId.of("America/Chicago")
+            Instant.ofEpochSecond(
+                forecastItem.sunrise + timezone
+            ), ZoneOffset.UTC
+
         )
     val sunsetTime =
         LocalDateTime.ofInstant(
-            forecastItem.sunset?.let { Instant.ofEpochSecond(it) },
-            ZoneId.of("America/Chicago")
+            Instant.ofEpochSecond(
+                forecastItem.sunset + timezone
+            ), ZoneOffset.UTC
         )
 
     Row(
@@ -80,7 +84,13 @@ fun ForecastInfo(forecastItem: DayForecast) {
             contentDescription = forecastItem.weather.firstOrNull()?.description,
             modifier = Modifier.size(50.dp)
         )
-        Texts(stringResource(R.string.date, sunriseTime.format(formatMonth), sunriseTime.dayOfMonth), 14.sp)
+        Texts(
+            stringResource(
+                R.string.date,
+                sunriseTime.format(formatMonth),
+                sunriseTime.dayOfMonth
+            ), 14.sp
+        )
         Spacer(modifier = Modifier.width(width = 30.dp))
 
         Column(modifier = Modifier.padding(10.dp)) {
